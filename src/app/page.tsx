@@ -18,13 +18,16 @@ export default function HomePage() {
           Login
         </Link>
 
-        <Link href="/enroll" className="px-6 py-3 bg-green-500 text-white rounded hover:bg-green-600 transition">
+        <Link href="/enroll" className="px-6 py-3 bg-green-500 text-dark rounded hover:bg-green-600 transition">
           Enroll Face
         </Link>
 
-        <Link href="/dashboard" className="px-6 py-3 bg-indigo-500 text-white rounded hover:bg-indigo-600 transition">
+        <Link href="/dashboard" className="px-6 py-3 bg-green-500 text-dark rounded hover:bg-green-600 transition">
           Dashboard
         </Link>
+        <Link href="/register" className="px-6 py-3 bg-blue-500 text-white rounded hover:bg-blue-600 transition">
+          Register User
+          </Link>
       </div>
 
       <footer className="mt-12 text-gray-500 text-sm">
