@@ -137,7 +137,7 @@ const handlePunch = async (punch_type: string) => {
 
 
   return (
-  <Layout>
+    <Layout>
     <div className="p-6 min-h-screen bg-gray-100">
       <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
       <p className="mb-4 text-gray-600">{status}</p>
@@ -157,7 +157,14 @@ const handlePunch = async (punch_type: string) => {
             <th className="p-2 border">ประเภท</th>
           </tr>
         </thead>
-      <tbody> {punches.map(p => (<tr key={p.id}> <td className="p-2 border">{new Date(p.created_at_th).toLocaleString()}</td> <td className="p-2 border">{p.punch_type}</td> </tr> ))} </tbody>
+        <tbody>
+          {punches.map(p => (
+            <tr key={p.id}>
+              <td className="p-2 border">{new Date(p.created_at_th).toLocaleString()}</td>
+              <td className="p-2 border">{p.punch_type}</td>
+            </tr>
+          ))}
+        </tbody>
       </table>
     </div>
   </Layout>
