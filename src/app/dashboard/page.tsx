@@ -9,6 +9,7 @@ interface Punch {
   id: string
   punch_type: string
   created_at_th: string
+  location_name: string
 }
 
 export default function DashboardPage() {
@@ -18,14 +19,37 @@ export default function DashboardPage() {
   const [faceapi, setFaceapi] = useState<any>(null)
 
   // ดึง punches
-  const fetchPunches = async (user_id: string) => {
-    const { data } = await supabase
-      .from("time_punches_th")
-      .select("*")
-      .eq("user_id", user_id)
-      .order("created_at_th", { ascending: false })
-    setPunches(data as Punch[])
+  // ดึง punches พร้อมชื่อ location
+const fetchPunches = async (user_id: string) => {
+  const { data, error } = await supabase
+    .from("time_punches_th")
+    .select(`
+      id,
+      punch_type,
+      created_at_th,
+      locations (
+        name
+      )
+    `) // join ตาราง locations ด้วย
+    .eq("user_id", user_id)
+    .order("created_at_th", { ascending: false })
+
+  if (error) {
+    console.error("Fetch punches error:", error)
+    return
   }
+
+  // map ให้ได้ location_name ออกมาเป็น field
+  const punchesWithLocation = data?.map((p: any) => ({
+    id: p.id,
+    punch_type: p.punch_type,
+    created_at_th: p.created_at_th,
+    location_name: p.locations?.name || "Unknown",
+  })) || []
+
+  setPunches(punchesWithLocation)
+}
+
 
   useEffect(() => {
     const fetchSessionAndPunches = async () => {
@@ -175,6 +199,8 @@ export default function DashboardPage() {
             <tr>
               <th className="p-2 border">เวลา</th>
               <th className="p-2 border">ประเภท</th>
+              <th className="p-2 border">Location</th> {/* เพิ่มคอลัมน์ */}
+
             </tr>
           </thead>
           <tbody>
@@ -182,6 +208,7 @@ export default function DashboardPage() {
               <tr key={p.id}>
                 <td className="p-2 border">{new Date(p.created_at_th).toLocaleString()}</td>
                 <td className="p-2 border">{p.punch_type}</td>
+                <td className="p-2 border">{p.location_name}</td> {/* แสดงชื่อ location */}
               </tr>
             ))}
           </tbody>

@@ -14,9 +14,14 @@ export default function RegisterPage() {
   const [status, setStatus] = useState("")
   const [locations, setLocations] = useState<{ id: string; name: string }[]>([])
   const [selectedLocation, setSelectedLocation] = useState<string>("")
+  const [showAddLocation, setShowAddLocation] = useState(false)
+  const [newLocationName, setNewLocationName] = useState("")
   const videoRef = useRef<HTMLVideoElement>(null)
   const [faceCaptured, setFaceCaptured] = useState(false)
   const [faceEmbedding, setFaceEmbedding] = useState<Float32Array | null>(null)
+  const [newLocationLatitude, setNewLocationLatitude] = useState<number | null>(null)
+  const [newLocationLongitude, setNewLocationLongitude] = useState<number | null>(null)
+  const [newLocationRadius, setNewLocationRadius] = useState<number>(200) // default 50m
 
   // โหลด locations จากฐานข้อมูล
   useEffect(() => {
@@ -26,6 +31,55 @@ export default function RegisterPage() {
     }
     fetchLocations()
   }, [])
+
+  const handleUseCurrentLocation = async () => {
+  try {
+    const pos = await new Promise<GeolocationPosition>((res, rej) =>
+      navigator.geolocation.getCurrentPosition(res, rej)
+    )
+    setNewLocationLatitude(pos.coords.latitude)
+    setNewLocationLongitude(pos.coords.longitude)
+    setStatus("Current location captured")
+  } catch (err) {
+    setStatus("Failed to get current location")
+  }
+}
+
+const handleAddLocation = async () => {
+  if (!newLocationName.trim()) {
+    setStatus("Location name required")
+    return
+  }
+  if (newLocationLatitude === null || newLocationLongitude === null) {
+    setStatus("Please set location coordinates")
+    return
+  }
+
+  const { data, error } = await supabase
+    .from("locations")
+    .insert({
+      name: newLocationName,
+      latitude: newLocationLatitude,
+      longitude: newLocationLongitude,
+      radius_m: newLocationRadius,
+    })
+    .select("id, name")
+    .single()
+
+  if (error) {
+    setStatus("Failed to add location: " + error.message)
+    return
+  }
+
+  setLocations([...locations, data])
+  setSelectedLocation(data.id)
+  setNewLocationName("")
+  setNewLocationLatitude(null)
+  setNewLocationLongitude(null)
+  setNewLocationRadius(50)
+  setShowAddLocation(false)
+  setStatus("Location added successfully")
+}
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,7 +103,6 @@ export default function RegisterPage() {
       return
     }
 
-    // เพิ่ม profile พร้อม face embedding และ location
     const { error: profileError } = await supabase.from("users_profile").insert({
       user_id: data.user?.id,
       full_name: name,
@@ -135,19 +188,76 @@ export default function RegisterPage() {
             className="px-4 py-2 border rounded"
           />
 
-          <select
-            value={selectedLocation}
-            onChange={(e) => setSelectedLocation(e.target.value)}
-            required
-            className="px-4 py-2 border rounded"
-          >
-            <option value="">Select your location</option>
-            {locations.map((loc) => (
-              <option key={loc.id} value={loc.id}>
-                {loc.name}
-              </option>
-            ))}
-          </select>
+          <div className="flex gap-2">
+            <select
+              value={selectedLocation}
+              onChange={(e) => setSelectedLocation(e.target.value)}
+              required
+              className="flex-1 px-4 py-2 border rounded"
+            >
+              <option value="">Select your location</option>
+              {locations.map((loc) => (
+                <option key={loc.id} value={loc.id}>
+                  {loc.name}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className="px-3 py-2 bg-gray-300 rounded hover:bg-gray-400"
+              onClick={() => setShowAddLocation(true)}
+            >
+              +
+            </button>
+          </div>
+
+          {showAddLocation && (
+            <div className="flex flex-col gap-2">
+               <input
+              type="text"
+              placeholder="New location name"
+             value={newLocationName}
+             onChange={(e) => setNewLocationName(e.target.value)}
+             className="px-4 py-2 border rounded"
+            />
+
+           <div className="flex gap-2">
+           <input
+            type="number"
+            placeholder="Radius (meters)"
+            value={newLocationRadius}
+            onChange={(e) => setNewLocationRadius(Number(e.target.value))}
+            className="flex-1 px-4 py-2 border rounded"
+              />
+
+                 <button
+                type="button"
+               className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+               onClick={handleUseCurrentLocation}
+                >
+                <img src="/vercel.svg" alt="Use Current Location" className="h-5 w-5" />
+                </button>
+              </div>
+
+                <div className="flex gap-2">
+              <button
+                  type="button"
+               className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+             onClick={handleAddLocation}
+      >
+                 Add
+                  </button>
+                <button
+                   type="button"
+                   className="px-3 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                  onClick={() => setShowAddLocation(false)}
+      >
+                          Cancel
+                         </button>
+                         </div>
+                        </div>
+                                )}
+
 
           <button
             type="submit"
