@@ -203,7 +203,7 @@ export default function RegisterPage() {
               <input type="text" placeholder="New location name" value={newLocationName} onChange={(e) => setNewLocationName(e.target.value)} className="px-4 py-2 border rounded"/>
               <div className="flex gap-2">
                 <input type="number" placeholder="Radius (meters)" value={newLocationRadius} onChange={(e) => setNewLocationRadius(Number(e.target.value))} className="flex-1 px-4 py-2 border rounded"/>
-                <button type="button" className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600" onClick={handleUseCurrentLocation}>📍</button>
+                <button type="button" className="px-3 py-2 bg-green-500 text-white rounded hover:bg-green-600" onClick={handleUseCurrentLocation}><img src="/location.png" alt="Use Current Location" className="h-6 w-6" /></button>
               </div>
               <div className="flex gap-2">
                 <button type="button" className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600" onClick={handleAddLocation}>Add</button>

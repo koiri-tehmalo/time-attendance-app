@@ -105,6 +105,7 @@ export default function EnrollPage() {
     <Layout>
       <main className="min-h-screen flex flex-col items-center justify-center bg-gray-100 gap-4">
         <h1 className="text-3xl font-bold">Enroll Face</h1>
+        <p className="text-center mb-2 text-gray-700">บันทึก/อัปเดตใบหน้าใหม่</p>
         <video
           ref={videoRef}
           autoPlay
