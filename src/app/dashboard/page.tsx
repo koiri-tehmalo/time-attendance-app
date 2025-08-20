@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabaseClient"
 import Layout from "@/components/Layout"
 import { haversineDistanceM } from "@/lib/distance"
-import type * as FaceAPI from "face-api.js"
 
 interface Punch {
   id: string
@@ -25,7 +24,7 @@ export default function DashboardPage() {
   const [punches, setPunches] = useState<Punch[]>([])
   const [status, setStatus] = useState("")
   const [userLocationId, setUserLocationId] = useState<string | null>(null)
-  const [faceapi, setFaceapi] = useState<typeof FaceAPI | null>(null)
+  const [faceapi, setFaceapi] = useState<any>(null)
 
   // ดึง punches
   // ดึง punches พร้อมชื่อ location
