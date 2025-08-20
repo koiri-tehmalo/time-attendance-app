@@ -42,8 +42,8 @@ export default function RegisterPage() {
   // โหลด face-api.js แบบ dynamic import
   useEffect(() => {
     const loadFaceApi = async () => {
-      const module = await import("face-api.js")
-      setFaceapi(module)
+      const faceModule = await import("face-api.js")
+      setFaceapi(faceModule)
     }
     loadFaceApi()
   }, [])
@@ -56,7 +56,7 @@ export default function RegisterPage() {
       setNewLocationLatitude(pos.coords.latitude)
       setNewLocationLongitude(pos.coords.longitude)
       setStatus("Current location captured")
-    } catch (err) {
+    } catch  {
       setStatus("Failed to get current location")
     }
   }
