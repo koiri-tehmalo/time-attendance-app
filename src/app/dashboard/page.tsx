@@ -3,9 +3,8 @@
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabaseClient"
 import * as faceapi from "face-api.js"
-import { haversineDistanceM } from "@/lib/distance"
 import Layout from "@/components/Layout"
-
+import { haversineDistanceM } from "@/lib/distance"
 
 interface Punch {
   id: string
@@ -16,157 +15,171 @@ interface Punch {
 export default function DashboardPage() {
   const [punches, setPunches] = useState<Punch[]>([])
   const [status, setStatus] = useState("")
+  const [userLocationId, setUserLocationId] = useState<string | null>(null)
 
-  // แก้ fetchPunches
-const fetchPunches = async (user_id: string) => {
-  const { data } = await supabase
-    .from("time_punches_th")
-    .select("*")
-    .eq("user_id", user_id)
-    .order("created_at_th", { ascending: false })
-  setPunches(data as Punch[])
-}
+  // ดึง punches
+  const fetchPunches = async (user_id: string) => {
+    const { data } = await supabase
+      .from("time_punches_th")
+      .select("*")
+      .eq("user_id", user_id)
+      .order("created_at_th", { ascending: false })
+    setPunches(data as Punch[])
+  }
 
+  useEffect(() => {
+    const fetchSessionAndPunches = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setStatus("Not logged in")
+        return
+      }
 
-// useEffect
-useEffect(() => {
-  const fetchSessionAndPunches = async () => {
+      // ดึง location_id ของผู้ใช้
+      const { data: profile } = await supabase
+        .from("users_profile")
+        .select("location_id")
+        .eq("user_id", user.id)
+        .single()
+      setUserLocationId(profile?.location_id || null)
+
+      fetchPunches(user.id)
+    }
+
+    fetchSessionAndPunches()
+
+    const loadModels = async () => {
+      setStatus("Loading face models...")
+      await Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
+        faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
+        faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
+      ])
+      setStatus("Models loaded")
+    }
+    loadModels()
+  }, [])
+
+  const handlePunch = async (punch_type: string) => {
+    setStatus("Getting location...")
+    const pos = await new Promise<GeolocationPosition>((res, rej) =>
+      navigator.geolocation.getCurrentPosition(res, rej)
+    )
+    const { latitude, longitude } = pos.coords
+
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      setStatus("Not logged in")
+    if (!user) return
+
+    // ดึง face embedding ของผู้ใช้
+    const { data: profile } = await supabase
+      .from("users_profile")
+      .select("face_embedding, location_id")
+      .eq("user_id", user.id)
+      .single()
+
+    if (!profile?.face_embedding) {
+      setStatus("No face enrolled")
       return
     }
-    fetchPunches(user.id) // ใช้ user.id
+
+    if (!profile.location_id) {
+      setStatus("No location assigned")
+      return
+    }
+
+    // ดึง location ผู้ใช้จากฐาน
+    const { data: locs } = await supabase
+      .from("locations")
+      .select("*")
+      .eq("id", profile.location_id)
+      .single()
+
+    if (!locs) {
+      setStatus("Location not found")
+      return
+    }
+
+    const distance = haversineDistanceM(latitude, longitude, locs.latitude, locs.longitude)
+    if (distance > locs.radius_m) {
+      setStatus(`You are ${Math.round(distance)}m away. Not allowed to punch here.`)
+      return
+    }
+
+    setStatus("Capturing face...")
+    const video = document.createElement("video")
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+    video.srcObject = stream
+    await video.play()
+
+    const detection = await faceapi
+      .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224 }))
+      .withFaceLandmarks()
+      .withFaceDescriptor()
+
+    stream.getTracks().forEach(t => t.stop())
+
+    if (!detection) {
+      setStatus("No face detected")
+      return
+    }
+
+    const distanceScore = faceapi.euclideanDistance(
+      detection.descriptor,
+      new Float32Array(profile.face_embedding)
+    )
+    if (distanceScore > 0.6) {
+      setStatus("Face does not match")
+      return
+    }
+
+    const { error } = await supabase.from("time_punches").insert({
+      user_id: user.id,
+      location_id: profile.location_id,
+      punch_type,
+      lat: latitude,
+      lng: longitude,
+      distance_m: distance,
+      face_score: distanceScore,
+      created_at: new Date()
+    })
+
+    if (error) setStatus("Punch failed: " + error.message)
+    else setStatus("Punch success!")
+
+    fetchPunches(user.id)
   }
-
-  fetchSessionAndPunches()
-
-  const loadModels = async () => {
-    setStatus("Loading face models...")
-    await Promise.all([
-      faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
-      faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
-      faceapi.nets.faceRecognitionNet.loadFromUri("/models")
-    ])
-    setStatus("Models loaded")
-  }
-  loadModels()
-}, [])
-
-
-
-  // แก้ handlePunch ให้ fetchPunches ใช้ user.id
-const handlePunch = async (punch_type: string) => {
-  setStatus("Getting location...")
-  const pos = await new Promise<GeolocationPosition>((res, rej) =>
-    navigator.geolocation.getCurrentPosition(res, rej)
-  )
-  const { latitude, longitude } = pos.coords
-
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return
-
-  const { data: profile } = await supabase
-    .from("users_profile")
-    .select("face_embedding")
-    .eq("user_id", user.id)
-    .single()
-
-  if (!profile?.face_embedding) {
-    setStatus("No face enrolled")
-    return
-  }
-
-  setStatus("Capturing face...")
-  const video = document.createElement("video")
-  const stream = await navigator.mediaDevices.getUserMedia({ video: true })
-  video.srcObject = stream
-  await video.play()
-
-  const detection = await faceapi
-    .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 224 }))
-    .withFaceLandmarks()
-    .withFaceDescriptor()
-
-  stream.getTracks().forEach(t => t.stop())
-
-  if (!detection) {
-    setStatus("No face detected")
-    return
-  }
-
-  const embedding = detection.descriptor
-  const distanceScore = faceapi.euclideanDistance(
-    embedding,
-    new Float32Array(profile.face_embedding)
-  )
-
-  if (distanceScore > 0.6) {
-    setStatus("Face does not match")
-    return
-  }
-
-  const { data: locs } = await supabase.from("locations").select("*")
-  if (!locs) return
-
-  const location = locs.find((l: any) =>
-    haversineDistanceM(latitude, longitude, l.latitude, l.longitude) <= l.radius_m
-  )
-  if (!location) {
-    setStatus("Not in allowed location")
-    return
-  }
-
-  const { error } = await supabase.from("time_punches").insert({
-    user_id: user.id,
-    location_id: location.id,
-    punch_type,
-    lat: latitude,
-    lng: longitude,
-    distance_m: haversineDistanceM(latitude, longitude, location.latitude, location.longitude),
-    face_score: distanceScore,
-    created_at: new Date() // จะเก็บ UTC
-  })
-
-  if (error) setStatus("Punch failed: " + error.message)
-  else setStatus("Punch success!")
-
-  // เรียก fetchPunches พร้อม user.id
-  fetchPunches(user.id)
-}
-
 
   return (
     <Layout>
-    <div className="p-6 min-h-screen bg-gray-100">
-      <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
-      <p className="mb-4 text-gray-600">{status}</p>
+      <div className="p-6 min-h-screen bg-gray-100">
+        <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
+        <p className="mb-4 text-gray-600">{status}</p>
 
-      <div className="flex flex-wrap gap-2 mb-6">
-        <button onClick={() => handlePunch("เข้าเช้า")} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">เข้าเช้า</button>
-        <button onClick={() => handlePunch("ออกเที่ยง")} className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">ออกเที่ยง</button>
-        <button onClick={() => handlePunch("เข้าบ่าย")} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">เข้าบ่าย</button>
-        <button onClick={() => handlePunch("ออกเย็น")} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">ออกเย็น</button>
-      </div>
+        <div className="flex flex-wrap gap-2 mb-6">
+          <button onClick={() => handlePunch("เข้าเช้า")} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">เข้าเช้า</button>
+          <button onClick={() => handlePunch("ออกเที่ยง")} className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">ออกเที่ยง</button>
+          <button onClick={() => handlePunch("เข้าบ่าย")} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">เข้าบ่าย</button>
+          <button onClick={() => handlePunch("ออกเย็น")} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">ออกเย็น</button>
+        </div>
 
-      <h2 className="text-2xl font-semibold mb-2">ประวัติลงเวลา</h2>
-      <table className="w-full border border-gray-300 rounded">
-        <thead className="bg-gray-200">
-          <tr>
-            <th className="p-2 border">เวลา</th>
-            <th className="p-2 border">ประเภท</th>
-          </tr>
-        </thead>
-        <tbody>
-          {punches.map(p => (
-            <tr key={p.id}>
-              <td className="p-2 border">{new Date(p.created_at_th).toLocaleString()}</td>
-              <td className="p-2 border">{p.punch_type}</td>
+        <h2 className="text-2xl font-semibold mb-2">ประวัติลงเวลา</h2>
+        <table className="w-full border border-gray-300 rounded">
+          <thead className="bg-gray-200">
+            <tr>
+              <th className="p-2 border">เวลา</th>
+              <th className="p-2 border">ประเภท</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </Layout>
-)
+          </thead>
+          <tbody>
+            {punches.map(p => (
+              <tr key={p.id}>
+                <td className="p-2 border">{new Date(p.created_at_th).toLocaleString()}</td>
+                <td className="p-2 border">{p.punch_type}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Layout>
+  )
 }
