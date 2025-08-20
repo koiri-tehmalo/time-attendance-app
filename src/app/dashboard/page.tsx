@@ -45,7 +45,7 @@ const punchesWithLocation: Punch[] = data?.map((p: PunchFromDB) => ({
   id: p.id,
   punch_type: p.punch_type,
   created_at_th: p.created_at_th,
-  location_name: p.locations?.name || "Unknown",
+  location_name: p.locations?.name ?? "Unknown",
 })) || []
 
 setPunches(punchesWithLocation)
@@ -184,35 +184,37 @@ setPunches(punchesWithLocation)
 
   return (
     <Layout>
-      <div className="p-6 min-h-screen bg-gray-100">
-        <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
-        <p className="mb-4 text-gray-600">{status}</p>
-        <div className="flex flex-wrap gap-2 mb-6">
-          <button onClick={() => handlePunch("เข้าเช้า")} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">เข้าเช้า</button>
-          <button onClick={() => handlePunch("ออกเที่ยง")} className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">ออกเที่ยง</button>
-          <button onClick={() => handlePunch("เข้าบ่าย")} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">เข้าบ่าย</button>
-          <button onClick={() => handlePunch("ออกเย็น")} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">ออกเย็น</button>
-        </div>
-        <h2 className="text-2xl font-semibold mb-2">ประวัติลงเวลา</h2>
-        <table className="w-full border border-gray-300 rounded">
-          <thead className="bg-gray-200">
-            <tr>
-              <th className="p-2 border">เวลา</th>
-              <th className="p-2 border">ประเภท</th>
-              <th className="p-2 border">Location</th> {/* เพิ่มคอลัมน์ */}
-            </tr>
-          </thead>
-          <tbody>
-            {punches.map(p => (
-              <tr key={p.id}>
-                <td className="p-2 border">{new Date(p.created_at_th).toLocaleString()}</td>
-                <td className="p-2 border">{p.punch_type}</td>
-                <td className="p-2 border">{p.location_name}</td> {/* แสดงชื่อ location */}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+     <div className="p-6 min-h-screen bg-gray-100">
+  <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
+  <p className="mb-4 text-gray-600">{status}</p>
+
+  <div className="flex flex-wrap gap-2 mb-6">
+    <button onClick={() => handlePunch("เข้าเช้า")} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">เข้าเช้า</button>
+    <button onClick={() => handlePunch("ออกเที่ยง")} className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">ออกเที่ยง</button>
+    <button onClick={() => handlePunch("เข้าบ่าย")} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">เข้าบ่าย</button>
+    <button onClick={() => handlePunch("ออกเย็น")} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">ออกเย็น</button>
+  </div>
+
+  <h2 className="text-2xl font-semibold mb-2">ประวัติลงเวลา</h2>
+  
+  <table className="w-full border border-gray-300 rounded">
+    <thead className="bg-gray-200">
+      <tr>
+        <th className="p-2 border">เวลา</th><th className="p-2 border">ประเภท</th><th className="p-2 border">Location</th>
+      </tr>
+    </thead>
+    <tbody>
+      {punches.map(p => (
+        <tr key={p.id}>
+          <td className="p-2 border">{new Date(p.created_at_th).toLocaleString()}</td>
+          <td className="p-2 border">{p.punch_type}</td>
+          <td className="p-2 border">{p.location_name}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
     </Layout>
   )
 }
