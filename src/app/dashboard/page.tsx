@@ -15,7 +15,7 @@ interface PunchFromDB {
   id: string
   punch_type: string
   created_at_th: string
-  locations?: { name: string} | null
+  locations?: { name: string }[] | null   // <- เป็น array เพราะ Supabase return เป็น array
 }
 
 export default function DashboardPage() {
@@ -45,8 +45,9 @@ const punchesWithLocation: Punch[] = data?.map((p: PunchFromDB) => ({
   id: p.id,
   punch_type: p.punch_type,
   created_at_th: p.created_at_th,
-  location_name: p.locations?.name ?? "Unknown",
+  location_name: p.locations?.[0]?.name ?? "Unknown", // เลือก element แรก
 })) || []
+
 
 setPunches(punchesWithLocation)
 
