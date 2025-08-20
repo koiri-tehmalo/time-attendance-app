@@ -41,12 +41,13 @@ const fetchPunches = async (user_id: string) => {
   .order("created_at_th", { ascending: false })
 
 // บอก TypeScript ว่า data เป็น PunchFromDB[]
-const punchesWithLocation: Punch[] = data?.map((p: PunchFromDB) => ({
+const punchesWithLocation: Punch[] = data?.map((p: any) => ({
   id: p.id,
   punch_type: p.punch_type,
   created_at_th: p.created_at_th,
-  location_name: p.locations?.[0]?.name ?? "Unknown", // เลือก element แรก
+  location_name: p.locations?.name ?? "Unknown", // ไม่ใช่ [0]
 })) || []
+
 
 
 setPunches(punchesWithLocation)
