@@ -11,12 +11,17 @@ interface Punch {
   created_at_th: string
   location_name: string
 }
+interface PunchLocation {
+  name: string
+}
+
 interface PunchFromDB {
   id: string
   punch_type: string
   created_at_th: string
-  locations?: { name: string } | null
+  locations?: PunchLocation | PunchLocation[] | null
 }
+
 
 export default function DashboardPage() {
   const [punches, setPunches] = useState<Punch[]>([])
@@ -43,8 +48,15 @@ const fetchPunches = async (user_id: string) => {
   console.log("Supabase fetchPunches data:", data)
   console.log("Supabase fetchPunches error:", error)
 // บอก TypeScript ว่า data เป็น PunchFromDB[]
-const punchesWithLocation: Punch[] = data?.map((p: any) => {
-  const loc = Array.isArray(p.locations) ? p.locations[0] : p.locations
+const punchesWithLocation: Punch[] = data?.map((p: PunchFromDB) => {
+  let loc: PunchLocation | undefined
+
+  if (Array.isArray(p.locations)) {
+    loc = p.locations[0]
+  } else {
+    loc = p.locations ?? undefined
+  }
+
   return {
     id: p.id,
     punch_type: p.punch_type,
@@ -52,6 +64,7 @@ const punchesWithLocation: Punch[] = data?.map((p: any) => {
     location_name: loc?.name ?? "Unknown",
   }
 }) || []
+
 
 
 
