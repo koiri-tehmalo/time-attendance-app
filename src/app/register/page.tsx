@@ -26,7 +26,7 @@ export default function RegisterPage() {
   const [newLocationLongitude, setNewLocationLongitude] = useState<number | null>(null)
   const [newLocationRadius, setNewLocationRadius] = useState<number>(200) // default 200m
 
-  const [faceapi, setFaceapi] = useState<any>(null)
+  const [faceapi, setFaceapi] = useState<typeof import("face-api.js") | null>(null)
   const [faceCaptured, setFaceCaptured] = useState(false)
   const [faceEmbedding, setFaceEmbedding] = useState<Float32Array | null>(null)
 
