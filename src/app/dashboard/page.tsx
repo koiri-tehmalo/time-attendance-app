@@ -207,7 +207,6 @@ setPunches(punchesWithLocation)
               <th className="p-2 border">เวลา</th>
               <th className="p-2 border">ประเภท</th>
               <th className="p-2 border">Location</th> {/* เพิ่มคอลัมน์ */}
-
             </tr>
           </thead>
           <tbody>
