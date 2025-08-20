@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabaseClient"
-import * as faceapi from "face-api.js"
 import Layout from "@/components/Layout"
 import { haversineDistanceM } from "@/lib/distance"
 
@@ -16,6 +15,7 @@ export default function DashboardPage() {
   const [punches, setPunches] = useState<Punch[]>([])
   const [status, setStatus] = useState("")
   const [userLocationId, setUserLocationId] = useState<string | null>(null)
+  const [faceapi, setFaceapi] = useState<any>(null)
 
   // ดึง punches
   const fetchPunches = async (user_id: string) => {
@@ -48,12 +48,15 @@ export default function DashboardPage() {
 
     fetchSessionAndPunches()
 
+    // Dynamic import face-api.js
     const loadModels = async () => {
       setStatus("Loading face models...")
+      const faceapiModule = await import("face-api.js")
+      setFaceapi(faceapiModule)
       await Promise.all([
-        faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
-        faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
-        faceapi.nets.faceRecognitionNet.loadFromUri("/models"),
+        faceapiModule.nets.tinyFaceDetector.loadFromUri("/models"),
+        faceapiModule.nets.faceLandmark68Net.loadFromUri("/models"),
+        faceapiModule.nets.faceRecognitionNet.loadFromUri("/models"),
       ])
       setStatus("Models loaded")
     }
@@ -61,6 +64,11 @@ export default function DashboardPage() {
   }, [])
 
   const handlePunch = async (punch_type: string) => {
+    if (!faceapi) {
+      setStatus("Face API not loaded")
+      return
+    }
+
     setStatus("Getting location...")
     const pos = await new Promise<GeolocationPosition>((res, rej) =>
       navigator.geolocation.getCurrentPosition(res, rej)
@@ -70,7 +78,7 @@ export default function DashboardPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    // ดึง face embedding ของผู้ใช้
+    // ดึง face embedding และ location_id ของผู้ใช้
     const { data: profile } = await supabase
       .from("users_profile")
       .select("face_embedding, location_id")
@@ -81,13 +89,12 @@ export default function DashboardPage() {
       setStatus("No face enrolled")
       return
     }
-
     if (!profile.location_id) {
       setStatus("No location assigned")
       return
     }
 
-    // ดึง location ผู้ใช้จากฐาน
+    // ดึง location ของผู้ใช้
     const { data: locs } = await supabase
       .from("locations")
       .select("*")
