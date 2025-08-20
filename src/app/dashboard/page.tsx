@@ -15,7 +15,7 @@ interface PunchFromDB {
   id: string
   punch_type: string
   created_at_th: string
-  locations?: { name: string }[] | null   // <- เป็น array เพราะ Supabase return เป็น array
+  locations?: { name: string } | null
 }
 
 export default function DashboardPage() {
@@ -40,13 +40,20 @@ const fetchPunches = async (user_id: string) => {
   .eq("user_id", user_id)
   .order("created_at_th", { ascending: false })
 
+  console.log("Supabase fetchPunches data:", data)
+  console.log("Supabase fetchPunches error:", error)
 // บอก TypeScript ว่า data เป็น PunchFromDB[]
-const punchesWithLocation: Punch[] = data?.map((p: any) => ({
-  id: p.id,
-  punch_type: p.punch_type,
-  created_at_th: p.created_at_th,
-  location_name: p.locations?.name ?? "Unknown", // ไม่ใช่ [0]
-})) || []
+const punchesWithLocation: Punch[] = data?.map((p: any) => {
+  const loc = Array.isArray(p.locations) ? p.locations[0] : p.locations
+  return {
+    id: p.id,
+    punch_type: p.punch_type,
+    created_at_th: p.created_at_th,
+    location_name: loc?.name ?? "Unknown",
+  }
+}) || []
+
+
 
 
 
