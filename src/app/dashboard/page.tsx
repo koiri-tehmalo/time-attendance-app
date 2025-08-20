@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabaseClient"
 import Layout from "@/components/Layout"
 import { haversineDistanceM } from "@/lib/distance"
+import type * as FaceAPI from "face-api.js"
 
 interface Punch {
   id: string
@@ -11,43 +12,49 @@ interface Punch {
   created_at_th: string
   location_name: string
 }
+interface PunchFromDB {
+  id: string
+  punch_type: string
+  created_at_th: string
+  locations?: {
+    name: string
+  } | null
+}
 
 export default function DashboardPage() {
   const [punches, setPunches] = useState<Punch[]>([])
   const [status, setStatus] = useState("")
   const [userLocationId, setUserLocationId] = useState<string | null>(null)
-  const [faceapi, setFaceapi] = useState<any>(null)
+  const [faceapi, setFaceapi] = useState<typeof FaceAPI | null>(null)
 
   // ดึง punches
   // ดึง punches พร้อมชื่อ location
 const fetchPunches = async (user_id: string) => {
   const { data, error } = await supabase
-    .from("time_punches_th")
-    .select(`
-      id,
-      punch_type,
-      created_at_th,
-      locations (
-        name
-      )
-    `) // join ตาราง locations ด้วยg8i
-    .eq("user_id", user_id)
-    .order("created_at_th", { ascending: false })
+  .from("time_punches_th")
+  .select(`
+    id,
+    punch_type,
+    created_at_th,
+    locations (
+      name
+    )
+  `)
+  .eq("user_id", user_id)
+  .order("created_at_th", { ascending: false })
 
-  if (error) {
-    console.error("Fetch punches error:", error)
-    return
-  }
+// บอก TypeScript ว่า data เป็น PunchFromDB[]
+const punchesData = data as PunchFromDB[] | null
 
-  // map ให้ได้ location_name ออกมาเป็น field
-  const punchesWithLocation = data?.map((p: any) => ({
-    id: p.id,
-    punch_type: p.punch_type,
-    created_at_th: p.created_at_th,
-    location_name: p.locations?.name || "Unknown",
-  })) || []
+const punchesWithLocation: Punch[] = (punchesData ?? []).map(p => ({
+  id: p.id,
+  punch_type: p.punch_type,
+  created_at_th: p.created_at_th,
+  location_name: p.locations?.name || "Unknown",
+}))
 
-  setPunches(punchesWithLocation)
+setPunches(punchesWithLocation)
+
 }
 
 

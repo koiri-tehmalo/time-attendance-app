@@ -1,10 +1,9 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { supabase } from "@/lib/supabaseClient"
+import type { User } from "@supabase/supabase-js"  // import type
 
 export function useUserSession() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)  // แทน any
   const [userName, setUserName] = useState<string | null>(null)
 
   useEffect(() => {
@@ -27,7 +26,6 @@ export function useUserSession() {
 
     fetchUser()
 
-    // ฟังการเปลี่ยนแปลง session (Login/Logout)
     const { data: listener } = supabase.auth.onAuthStateChange((_, session) => {
       if (session?.user) {
         fetchUser()
