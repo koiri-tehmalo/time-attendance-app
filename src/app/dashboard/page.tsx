@@ -30,7 +30,7 @@ const fetchPunches = async (user_id: string) => {
       locations (
         name
       )
-    `) // join ตาราง locations ด้วย
+    `) // join ตาราง locations ด้วยg8i
     .eq("user_id", user_id)
     .order("created_at_th", { ascending: false })
 
