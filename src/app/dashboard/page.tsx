@@ -15,9 +15,7 @@ interface PunchFromDB {
   id: string
   punch_type: string
   created_at_th: string
-  locations?: {
-    name: string
-  } | null
+  locations?: { name: string} | null
 }
 
 export default function DashboardPage() {
@@ -43,14 +41,12 @@ const fetchPunches = async (user_id: string) => {
   .order("created_at_th", { ascending: false })
 
 // บอก TypeScript ว่า data เป็น PunchFromDB[]
-const punchesData = data as PunchFromDB[] | null
-
-const punchesWithLocation: Punch[] = (punchesData ?? []).map(p => ({
+const punchesWithLocation: Punch[] = data?.map((p: PunchFromDB) => ({
   id: p.id,
   punch_type: p.punch_type,
   created_at_th: p.created_at_th,
   location_name: p.locations?.name || "Unknown",
-}))
+})) || []
 
 setPunches(punchesWithLocation)
 
