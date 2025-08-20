@@ -22,7 +22,7 @@ export default function DashboardPage() {
   const [punches, setPunches] = useState<Punch[]>([])
   const [status, setStatus] = useState("")
   const [userLocationId, setUserLocationId] = useState<string | null>(null)
-  const [faceapi, setFaceapi] = useState<any>(null)
+  const [faceapi, setFaceapi] = useState<typeof import("face-api.js") | null>(null)
 
   // ดึง punches
   // ดึง punches พร้อมชื่อ location
@@ -194,7 +194,6 @@ setPunches(punchesWithLocation)
           <button onClick={() => handlePunch("เข้าบ่าย")} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">เข้าบ่าย</button>
           <button onClick={() => handlePunch("ออกเย็น")} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">ออกเย็น</button>
         </div>
-
         <h2 className="text-2xl font-semibold mb-2">ประวัติลงเวลา</h2>
         <table className="w-full border border-gray-300 rounded">
           <thead className="bg-gray-200">

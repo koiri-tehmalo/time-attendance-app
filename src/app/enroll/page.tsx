@@ -2,26 +2,29 @@
 
 import { useEffect, useRef, useState } from "react"
 import { supabase } from "@/lib/supabaseClient"
-import * as faceapi from "face-api.js"
 import Layout from "@/components/Layout"
 
 export default function EnrollPage() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [status, setStatus] = useState("")
+  const [faceapi, setFaceapi] = useState<any>(null)
+
 
   // โหลดโมเดลตอน mount
   useEffect(() => {
-    const loadModels = async () => {
-      setStatus("Loading face models...")
-      await Promise.all([
- faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
-        faceapi.nets.faceLandmark68TinyNet.loadFromUri("/models"), // <-- TinyNet
-        faceapi.nets.faceRecognitionNet.loadFromUri("/models")
-])
+    const loadFaceAPI = async () => {
+      const faceapiModule = await import("face-api.js") // import dynamic client-side
+      setFaceapi(faceapiModule)
 
-      setStatus("Models loaded")
+      // โหลดโมเดล
+      await Promise.all([
+        faceapiModule.nets.tinyFaceDetector.loadFromUri("/models"),
+        faceapiModule.nets.faceLandmark68Net.loadFromUri("/models"),
+        faceapiModule.nets.faceRecognitionNet.loadFromUri("/models"),
+      ])
     }
-    loadModels()
+
+    loadFaceAPI()
   }, [])
 
   const startVideo = async () => {
