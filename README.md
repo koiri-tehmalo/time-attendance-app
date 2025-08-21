@@ -37,7 +37,12 @@
    npm install
    # หรือ
    yarn install
-4. รันโปรเจกต์
+3. ตั้งค่า environment variables
+   สร้างไฟล์ .env.local และใส่ค่า:
+   ```bash
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+5. รันโปรเจกต์
    ```bash
    npm run dev
    # หรือ
