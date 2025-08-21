@@ -33,12 +33,12 @@
    git clone https://github.com/your-repo/time-attendance-app.git
    cd time-attendance-app
 2. ติดตั้ง dependencies
-   git clone https://github.com/your-repo/time-attendance-app.git
-   cd time-attendance-app
+   ```bash
    npm install
    # หรือ
    yarn install
 4. รันโปรเจกต์
+   ```bash
    npm run dev
    # หรือ
    yarn dev
