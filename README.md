@@ -30,7 +30,7 @@
 
 1. Clone โปรเจกต์
    ```bash
-   git clone https://github.com/your-repo/time-attendance-app.git
+   git clone https://github.com/koiri-tehmalo/time-attendance-app.git
    cd time-attendance-app
 2. ติดตั้ง dependencies
    ```bash
